@@ -1,5 +1,66 @@
-<script>
-  fetch('https://jsonplaceholder.typicode.com/todos/1')
-      .then(response => response.json())
-      .then(json => console.log(json))
-</script>
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+</head>
+<body>
+  <div id="container"></div>
+  <script>
+    // fetch('https://jsonplaceholder.typicode.com/comments')
+    //     .then(response => response.json())
+    //     .then(json => console.log(json))
+
+      const scrollToBottom = element => {
+        element.scrollTop = element.scrollHeight;
+      }
+
+      fetch("https://jsonplaceholder.typicode.com/comments")
+        .then((response) => response.body)
+        .then((rb) => {
+          const container = document.getElementById("container");
+          const reader = rb.getReader();
+
+          return new ReadableStream({
+            start(controller) {
+              // The following function handles each data chunk
+              function push() {
+                // "done" is a Boolean and value a "Uint8Array"
+                reader.read().then(({ done, value }) => {
+                  // If there is no more data to read
+                  if (done) {
+                    console.log("done", done);
+                    controller.close();
+                    return;
+                  }
+
+                  setTimeout(() => {
+                    // Check chunks by logging to the console
+                    const decoded = new TextDecoder().decode(value, { stream: true});
+                    console.log(done, decoded);
+                    container.innerText += decoded;
+                    window.scrollTo(0, document.body.scrollHeight);
+                    // Get the data and send it to the browser via the controller
+                    controller.enqueue(value);
+                    push();
+                  }, 200);
+                });
+              }
+
+              push();
+            },
+          }
+          ,new CountQueuingStrategy({ highWaterMark: 1 }));
+        })
+        // .then((stream) =>
+        //   // Respond with our stream
+        //   new Response(stream, { headers: { "Content-Type": "text/json" } }).text(),
+        // )
+        // .then((result) => {
+        //   // Do things with result
+        //   console.log(result);
+        // });
+  </script>
+</body>
+</html>
+
